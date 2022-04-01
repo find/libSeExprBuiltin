@@ -23,26 +23,6 @@ Vec3d color(double u, double v, Curve<Vec3d> const& curve) {
   return _uv;
 }
 
-void makecurve(Curve<Vec3d>& curve, double p, Vec3d const& c, int interp)
-{
-  curve.addPoint(p, c, static_cast<Curve<Vec3d>::InterpType>(interp));
-}
-template <typename... T>
-void makecurve(Curve<Vec3d>& curve, double p, Vec3d const& c, int interp, T... rest)
-{
-  makecurve(curve, p, c, interp);
-  makecurve(curve, rest...);
-}
-template <typename... T>
-Curve<Vec3d> makecurve(double p, Vec3d const& c, int interp, T... rest)
-{
-  Curve<Vec3d> curve;
-  makecurve(curve, p, c, interp);
-  makecurve(curve, rest...);
-  curve.preparePoints();
-  return curve;
-}
-
 int main() {
   auto curve = makecurve(0.280255,Vec3d(0.341176,0.0901961,0.372549),4,0.609428,Vec3d(0.823529,0.670588,0.541176),4,0,Vec3d(0,0,0),4,1,Vec3d(1,1,1),4);
 

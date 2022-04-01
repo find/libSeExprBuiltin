@@ -92,4 +92,50 @@ class Curve {
     //! Returns a component of the given value
     static double comp(const T& val, const int i);
 };
+
+static inline void makecurve_helper(Curve<Vec3d>& curve, double p, Vec3d const& c, int interp)
+{
+  curve.addPoint(p, c, static_cast<Curve<Vec3d>::InterpType>(interp));
 }
+template <typename... T>
+static inline void makecurve_helper(Curve<Vec3d>& curve, double p, Vec3d const& c, int interp, T... rest)
+{
+  makecurve_helper(curve, p, c, interp);
+  makecurve_helper(curve, rest...);
+}
+template <typename... T>
+static inline Curve<Vec3d> makecurve(double p, Vec3d const& c, int interp, T... rest)
+{
+  Curve<Vec3d> curve;
+  makecurve_helper(curve, p, c, interp);
+  makecurve_helper(curve, rest...);
+  curve.preparePoints();
+  return curve;
+}
+
+static inline void makecurve_helper(Curve<double>& curve, double p, double v, int interp)
+{
+  curve.addPoint(p, v, static_cast<Curve<double>::InterpType>(interp));
+}
+template <typename... T>
+static inline void makecurve_helper(Curve<double>& curve, double p, double v, int interp, T... rest)
+{
+  makecurve_helper(curve, p, v, interp);
+  makecurve_helper(curve, rest...);
+}
+template <typename... T>
+static inline Curve<double> makecurve(double p, double v, int interp, T... rest)
+{
+  Curve<double> curve;
+  makecurve_helper(curve, p, v, interp);
+  makecurve_helper(curve, rest...);
+  curve.preparePoints();
+  return curve;
+}
+
+// FYI. here's a little VIM script to covert SeExpr vectors to Vec3d:
+// %s/\v\[([^]]*)\]/Vec3d(\1)/g
+// after this, ccurve(...) expressions can be translated to makecurve call easily
+
+} // namespace SeExpr2
+
