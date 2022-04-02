@@ -23,10 +23,18 @@ Vec3d color(double u, double v, Curve<Vec3d> const& curve) {
   return _uv;
 }
 
-int main() {
-  auto curve = makecurve(0.280255,Vec3d(0.341176,0.0901961,0.372549),4,0.609428,Vec3d(0.823529,0.670588,0.541176),4,0,Vec3d(0,0,0),4,1,Vec3d(1,1,1),4);
+int main(int c, char** v) {
+  int w = 4096, h = 4096;
+  if (c==2) {
+    if (w = atoi(v[1]); w==0) {
+      std::cerr<<"usage: "<<v[0]<<" [resolution]"<<std::endl;
+      return 1;
+    } else {
+      h = w;
+    }
+  }
 
-  constexpr int w = 4096, h = 4096;
+  auto curve = makecurve(0.280255,Vec3d(0.341176,0.0901961,0.372549),4,0.609428,Vec3d(0.823529,0.670588,0.541176),4,0,Vec3d(0,0,0),4,1,Vec3d(1,1,1),4);
   auto now = std::chrono::high_resolution_clock::now();
   uint8_t* img = new uint8_t[w*h*3];
 #pragma omp parallel for
@@ -40,11 +48,11 @@ int main() {
     }
   }
   auto dur = std::chrono::high_resolution_clock::now()-now;
-  std::cout<<"generation : "<<std::chrono::nanoseconds(dur).count()<<"ns\n";
+  std::cout<<"generation : "<<std::chrono::nanoseconds(dur).count()*1e-9<<"s\n";
   now = std::chrono::high_resolution_clock::now();
   fpng::fpng_encode_image_to_file("output.png", img, w,h,3);
   dur = std::chrono::high_resolution_clock::now()-now;
-  std::cout<<"writing png: "<<std::chrono::nanoseconds(dur).count()<<"ns\n";
+  std::cout<<"writing png: "<<std::chrono::nanoseconds(dur).count()*1e-9<<"s\n";
   delete[] img;
   return 0;
 }

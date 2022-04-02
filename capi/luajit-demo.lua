@@ -87,13 +87,68 @@ Vec3d  sampleColorCurve(ColorCurve const* curve, double p);
 double sampleNumCurve(NumCurve const* curve, double p);
 void freeColorCurve(ColorCurve*  curve);
 void freeNumCurve(NumCurve*  curve);
+
+int savepng(char const* filename, uint8_t const* image, int w, int h, int nchannels);
 ]])
 
 local vecmt = {
   __tostring = function(self) return string.format('[%f, %f, %f]', self.x, self.y, self.z) end
 }
 
-se = ffi.load('libse')
-vec = ffi.metatype('Vec3d', vecmt)
+local se = ffi.load('libse')
+local vec = ffi.metatype('Vec3d', vecmt)
 
-print(se.vturbulence(vec(0.2,0.1,0), 6, 2, 0.5))
+--print(se.vturbulence(vec(0.2,0.1,0), 6, 2, 0.5))
+local function color(u, v, curve)
+  local _uv = vec(u, v, 1)
+  local _offset = vec(0.552941,0.709804,0.262745)
+  local _oct = 7
+  local _gain = 0.6652
+  local _lac = 2.7928
+  local _size = 1.486
+
+  _uv = vec(_uv.x*_size+_offset.x, _uv.y*_size+_offset.y, _uv.z*_size+_offset.z)
+  _uv = se.vturbulence(_uv, _oct, _lac, _gain)
+  local n = se.fbm(_uv, _oct, _lac, _gain)
+  _uv = se.sampleColorCurve(curve, n)
+  return _uv
+end
+
+local makecurve = function(...)
+  local cnt = select('#',...)/3
+  local pts = ffi.new('double[?]', cnt)
+  local vls = ffi.new('Vec3d[?]', cnt)
+  local itp = ffi.new('int[?]', cnt)
+  local args = {...}
+  for i=0,cnt-1 do
+    pts[i] = args[i*3+1]
+    vls[i] = args[i*3+2]
+    itp[i] = args[i*3+3]
+  end
+
+  local pcurve = ffi.new('ColorCurve*[1]')
+  se.initColorCurve(pcurve, cnt, pts, vls, itp)
+  return pcurve[0]
+end
+
+local curve = makecurve(0.280255,vec(0.341176,0.0901961,0.372549),4,0.609428,vec(0.823529,0.670588,0.541176),4,0,vec(0,0,0),4,1,vec(1,1,1),4);
+--print(color(0.5, 0.5, curve))
+local w,h = 1024,1024
+local buf = ffi.new('uint8_t[?]', w*h*3)
+local now = os.clock()
+for i=0,h-1 do
+  for j=0,w-1 do
+    local pix = color(j/w, i/h, curve)
+    local off = (i*w+j)*3
+    buf[off]   = pix.x*255
+    buf[off+1] = pix.y*255
+    buf[off+2] = pix.z*255
+  end
+end
+print(string.format('calculation takes %f seconds', os.clock()-now))
+se.savepng("output.png", buf, w, h, 3)
+print('done.')
+
+se.freeColorCurve(curve)
+
+
